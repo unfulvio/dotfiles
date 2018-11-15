@@ -24,9 +24,16 @@ alias edit="nocorrect sudo nano"
 
 # PATH
 export PATH=$PATH:/opt/gitkraken
+# Composer
+export PATH=$PATH:vendor/bin
+# Go
 export PATH=$PATH:/usr/local/go/bin
 export GOPATH=/projects/go
 export PATH=$PATH:$(go env GOPATH)/bin
+# Add RVM to PATH for scripting.
+# Make sure this is the last PATH variable change.
+export PATH="$PATH:$HOME/.rvm/bin"
+
 
 ############
 # ZSH Shell
@@ -46,7 +53,7 @@ export UPDATE_ZSH_DAYS=13
 source $ZSH/oh-my-zsh.sh
 
 # ZSH plugins
-plugins=( bower composer git git-extras grunt npm sudo svn vagrant zsh-autosuggestions )
+plugins=( bower composer git git-extras grunt npm sudo svn vagrant zsh-autosuggestions codeception )
 
 
 # Get my local IP address (current interface is enp0s25)
@@ -76,7 +83,7 @@ windows() {
     WINIP=$1  
   fi
   echo "Connecting to $WINIP..."
-  rdesktop -g 1920x1080 -r disk:moshimoshi=/home/fulvio/Desktop/Shared -u XXXXXX.XXXXXXXX@XXXXXXXX.XXX $WINIP
+  rdesktop -g 1920x1080 -r disk:moshimoshi=/home/fulvio/Desktop/Shared -u fulvio.notarstefano@gmail.com $WINIP
 }
 
 # Mount Synology shared folders
@@ -100,8 +107,8 @@ export DROPBOX_PATH=~/Dropbox/
 ###############
 
 export GITHUB_USERNAME=unfulvio
-#export GITHUB_API_KEY=XXXXXXXX
-#export GITHUB_TOKEN=XXXXXXXXXX
+export GITHUB_API_KEY=<insert_github_api_key_here>
+export GITHUB_TOKEN=<insert_github_api_token_here>
 
 # Sync a Git Fork with Upstream
 # https://help.github.com/articles/configuring-a-remote-for-a-fork/
@@ -136,6 +143,17 @@ gitundo() {
   git reset HEAD~
 }
 
+# Run a composer update when switching branches or pulling the latest changes
+gitcompose() {
+  if [[ $# -eq 0 ]]; then
+    git checkout $1
+    git pull origin $1
+  else
+    git pull origin $(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
+  fi
+  composer update
+}
+
 # Rename a brach 
 # usage: gitrename <oldname> <newname>
 gitrename() {
@@ -143,7 +161,7 @@ gitrename() {
   git push origin :$1 $2
   git push origin -u $2
 }
-alias gitren="gitrename"
+alias gitren="nocorrect gitrename"
 
 # Delete a tag locally and upstream
 # usage: gitdeletedag <tagname>
@@ -151,18 +169,22 @@ gitdeletetag() {
   git tag -d $1
   git push origin ":refs/tags/$1"
 }
-alias gitrmtag="gitdeletetag"
+alias gitrmtag="nocorrect gitdeletetag"
 
 
-################
-# WordPress Dev
-################
+##############
+# Development
+##############
 
 export WT_REPOS_PATH=/projects/wp/woothemes/
 
 vvv() {
   if [[ $1 == "cd" ]]; then
-    cd "/projects/wp/vvv/srv/www/$2/public_html/"
+    if [ -z "$2" ]; then
+      cd "/projects/wp/vvv"
+    else
+      cd "/projects/wp/vvv/www/$2/public_html/"
+    fi
   else  
     CWD="$(pwd)"
     cd "/projects/wp/vvv/"
@@ -170,6 +192,7 @@ vvv() {
     cd $CWD
   fi
 }
+alias vvv="nocorrect vvv"
 
 skyverge() {
   cd "/projects/wp/skyverge/"
@@ -193,6 +216,10 @@ jiltwc() {
 
 jiltedd() {
   cd "/projects/wp/skyverge/jilt-for-edd"
+}
+
+jilt() {
+  cd "/projects/wp/skyverge/jilt-app"
 }
 
 
