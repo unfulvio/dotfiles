@@ -12,6 +12,7 @@ export ARCHFLAGS="-arch x86_64"
 # SSH
 export SSH_KEY_PATH="~/.ssh/fulvio-notarstefano-id-rsa"
 
+
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='nano'
@@ -22,17 +23,23 @@ fi
 # SU CLI Editor
 alias edit="nocorrect sudo nano"
 
+
+#######
 # PATH
+#######
+
+# Gitkraken
 export PATH=$PATH:/opt/gitkraken
 # Composer
 export PATH=$PATH:vendor/bin
+# HTTP Prompt
+export PATH=$PATH:/home/fulvio/.local/bin
+# Snap
+export PATH=$PATH:/var/lib/snapd/snap/bin 
 # Go
 export PATH=$PATH:/usr/local/go/bin
 export GOPATH=/projects/go
 export PATH=$PATH:$(go env GOPATH)/bin
-# Add RVM to PATH for scripting.
-# Make sure this is the last PATH variable change.
-export PATH="$PATH:$HOME/.rvm/bin"
 
 
 ############
@@ -53,8 +60,13 @@ export UPDATE_ZSH_DAYS=13
 source $ZSH/oh-my-zsh.sh
 
 # ZSH plugins
-plugins=( bower composer git git-extras grunt npm sudo svn vagrant zsh-autosuggestions codeception )
+plugins=( bower catimg composer copydir copyfile dirhistory git git-extras grunt gulp httpie npm sudo svn vagrant zsh-autosuggestions codeception )
 
+# Update OhMyZsh
+alias updatezsh="upgrade_oh_my_zsh"
+
+# Please
+alias please='sudo $(fc -ln -1)'
 
 # Get my local IP address (current interface is enp0s25)
 localip() {
@@ -74,10 +86,36 @@ myip() {
   echo "External IP address: ${EXTERNALIP}"
 }
 
+# Creates a Gnome app shortcut
+appshortcut() {
+  if [ $# -eq 0 ]; then
+    return
+  else
+    cat "~/.local/share/applications/$1.desktop" << EOF
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Application Name
+Comment=Application description
+Icon=/path/to/icon.svg
+Exec=application or "script.sh" %f
+Terminal=false
+StartupWMClass=helps-with-sticky
+Name[en_GB]=Application.desktop
+EOF
+    gedit "~/.local/share/applications/$1.desktop"
+  fi
+}
+
+# open Gnome Files for the current path
+files() {
+  nocorrect xdg-open .
+}
+
 # Windows Remote Desktop
 windows() {
   if [ $# -eq 0 ]; then
-    echo 'Using default address. '
+    echo 'Using default address... '
     WINIP="192.168.2.14"
   else
     WINIP=$1  
@@ -88,7 +126,7 @@ windows() {
 
 # Mount Synology shared folders
 synology() {
-  for dir_name in backup books comics downloads music photo projects software video; do
+  for dir_name in backup books comics downloads dropbox music photo projects software surveillance video; do
     sudo mount -t nfs 192.168.2.23:/volume1/$dir_name /synology/$dir_name
     cd /synology
   done
@@ -102,13 +140,14 @@ synology() {
 export DROPBOX_PATH=~/Dropbox/
 
 
-###############
-# Git / GitHub
-###############
+###########################
+# Git / GitHub / ClubHouse
+###########################
 
 export GITHUB_USERNAME=unfulvio
-export GITHUB_API_KEY=<insert_github_api_key_here>
-export GITHUB_TOKEN=<insert_github_api_token_here>
+export GITHUB_API_KEY=<redacted>
+export GITHUB_TOKEN=<redacted>
+export CLUBHOUSE_API_TOKEN=<redacted>
 
 # Sync a Git Fork with Upstream
 # https://help.github.com/articles/configuring-a-remote-for-a-fork/
@@ -171,12 +210,18 @@ gitdeletetag() {
 }
 alias gitrmtag="nocorrect gitdeletetag"
 
+# Configures gedit as the default git editor
+gitgedit() {
+  git config --global core.editor "gedit -s"
+}
 
 ##############
 # Development
 ##############
 
 export WT_REPOS_PATH=/projects/wp/woothemes/
+export WC_CONSUMER_KEY=<redacted>
+export WC_CONSUMER_SECRET=<redacted>
 
 vvv() {
   if [[ $1 == "cd" ]]; then
@@ -186,6 +231,9 @@ vvv() {
       cd "/projects/wp/vvv/www/$2/public_html/"
     fi
   else  
+    # this may help with permission problems... sometimes
+    echo " " | sudo tee --append /etc/hosts > /dev/null
+    echo " " | sudo tee --append /etc/exports > /dev/null
     CWD="$(pwd)"
     cd "/projects/wp/vvv/"
     vagrant "$@"
@@ -193,6 +241,24 @@ vvv() {
   fi
 }
 alias vvv="nocorrect vvv"
+
+vvvngrok() {
+  if [ $# -eq 0 ]; then
+    echo "Using default host ..."
+    HOST="skyverge.test"
+  else
+    echo "Using $1 as the host ... "
+    HOST="$1"
+    if [ -z "$2" ]; then
+      echo "Subdomain is 'fulvio' ... "
+      SUBDOMAIN=fulvio
+    else
+      echo "Subdomain is '$2' ... "
+      SUBDOMAIN="$2"
+    fi
+  fi
+  vvv ssh --command "sudo ngrok http 80 -host-header=$HOST -subdomain=$SUBDOMAIN"
+}
 
 skyverge() {
   cd "/projects/wp/skyverge/"
@@ -252,3 +318,12 @@ else
   alias uninstall="nocorrect sudo apt-get remove"
 
 fi
+
+# Packages and tools to install on clean machine
+setup() {
+  update
+  # https://httpie.org/
+  install httpie
+  # http://http-prompt.com/
+  pip install --user http-prompt 
+}
