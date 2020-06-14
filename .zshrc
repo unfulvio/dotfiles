@@ -12,6 +12,9 @@ export ARCHFLAGS="-arch x86_64"
 # SSH
 export SSH_KEY_PATH="~/.ssh/fulvio-notarstefano-id-rsa"
 
+# GPG
+export GPG_TTY="<XXXXXXXXXXXXXX>"
+
 
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
@@ -60,7 +63,7 @@ export UPDATE_ZSH_DAYS=13
 source $ZSH/oh-my-zsh.sh
 
 # ZSH plugins
-plugins=( bower catimg composer copydir copyfile dirhistory git git-extras grunt gulp httpie npm sudo svn vagrant zsh-autosuggestions codeception )
+plugins=( catimg composer copydir copyfile dirhistory git git-extras grunt gulp httpie npm sudo svn vagrant zsh-autosuggestions zsh-syntax-highlighting codeception )
 
 # Update OhMyZsh
 alias updatezsh="upgrade_oh_my_zsh"
@@ -112,6 +115,32 @@ files() {
   nocorrect xdg-open .
 }
 
+# fix for VMWare Workstation breaks (must update the VM version)
+fixwmware() {
+  VMWARE_VERSION=workstation-15.5.1
+  TMP_FOLDER=/tmp/patch-vmware
+
+  rm -fdr $TMP_FOLDER
+  mkdir -p $TMP_FOLDER
+  cd $TMP_FOLDER
+
+  git clone https://github.com/mkubecek/vmware-host-modules.git
+
+  cd $TMP_FOLDER/vmware-host-modules
+
+  git checkout $VMWARE_VERSION
+  git fetch
+
+  make
+  sudo make install
+  sudo rm /usr/lib/vmware/lib/libz.so.1/libz.so.1
+  sudo ln -s /lib/x86_64-linux-gnu/libz.so.1
+
+  /usr/lib/vmware/lib/libz.so.1/libz.so.1
+
+  sudo /etc/init.d/vmware restart
+}
+
 # Windows Remote Desktop
 windows() {
   if [ $# -eq 0 ]; then
@@ -145,12 +174,12 @@ export DROPBOX_PATH=~/Dropbox/
 ###########################
 
 export GITHUB_USERNAME=unfulvio
-export GITHUB_API_KEY=<redacted>
-export GITHUB_TOKEN=<redacted>
-export CLUBHOUSE_API_TOKEN=<redacted>
+export GITHUB_API_KEY=<XXXXXXXXXXXXXX>
+export GITHUB_TOKEN=<XXXXXXXXXXXXXX>
 
 # Sync a Git Fork with Upstream
 # https://help.github.com/articles/configuring-a-remote-for-a-fork/
+# https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/syncing-a-fork
 gitsync() {
   git fetch upstream
   git checkout master
@@ -176,6 +205,17 @@ gitupdate() {
   git fetch --prune
 }
 alias gitup="gitupdate"
+
+# Removes all merged branches
+gitprune() {
+  gitupdate
+  git branch --merged | grep -v "\*" | xargs -n 1 git branch -d
+}
+
+# Stash with message
+gitstash() {
+ git stash save $1
+}
 
 # Undo the last commit
 gitundo() {
@@ -220,8 +260,15 @@ gitgedit() {
 ##############
 
 export WT_REPOS_PATH=/projects/wp/woothemes/
-export WC_CONSUMER_KEY=<redacted>
-export WC_CONSUMER_SECRET=<redacted>
+export WC_CONSUMER_KEY=<XXXXXXXXXXXXXX>
+export WC_CONSUMER_SECRET=<XXXXXXXXXXXXXX>
+
+export CLUBHOUSE_API_TOKEN=<XXXXXXXXXXXXXX>
+export GLOTPRESS_USER=fulvio
+export GLOTPRESS_PASSWORD=<XXXXXXXXXXXXXX>
+
+
+VAGRANT_DISABLE_STRICT_DEPENDENCY_ENFORCEMENT=1
 
 vvv() {
   if [[ $1 == "cd" ]]; then
@@ -249,19 +296,28 @@ vvvngrok() {
   else
     echo "Using $1 as the host ... "
     HOST="$1"
-    if [ -z "$2" ]; then
-      echo "Subdomain is 'fulvio' ... "
-      SUBDOMAIN=fulvio
-    else
-      echo "Subdomain is '$2' ... "
-      SUBDOMAIN="$2"
-    fi
   fi
-  vvv ssh --command "sudo ngrok http 80 -host-header=$HOST -subdomain=$SUBDOMAIN"
+  if [ -z "$2" ]; then
+    echo "Subdomain is 'fulvio' ... "
+    SUBDOMAIN=fulvio
+  else
+    echo "Subdomain is '$2' ... "
+    SUBDOMAIN="$2"
+  fi
+  vvv ssh --command "sudo ./ngrok http 80 -host-header=$HOST -subdomain=$SUBDOMAIN -config=/home/vagrant/.ngrok2/ngrok.yml
+"
 }
 
 skyverge() {
-  cd "/projects/wp/skyverge/"
+  if [[ $1 == "cd" ]]; then
+    if [ -z "$2" ]; then
+      cd "/projects/wp/skyverge/"
+    else
+      cd "/projects/wp/skyverge/$2/"
+    fi
+  else  
+    cd "/projects/wp/skyverge/"
+  fi
 }
 
 woothemes() {
@@ -274,18 +330,6 @@ woocommerce() {
 
 subscriptions() {
   cd "/projects/wp/woothemes/woocommerce-subscriptions"
-}
-
-jiltwc() {
-  cd "/projects/wp/skyverge/jilt-for-woocommerce"
-}
-
-jiltedd() {
-  cd "/projects/wp/skyverge/jilt-for-edd"
-}
-
-jilt() {
-  cd "/projects/wp/skyverge/jilt-app"
 }
 
 
