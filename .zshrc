@@ -13,7 +13,7 @@ export ARCHFLAGS="-arch x86_64"
 export SSH_KEY_PATH="~/.ssh/fulvio-notarstefano-id-rsa"
 
 # GPG
-export GPG_TTY="<XXXXXXXXXXXXXX>"
+export GPG_TTY="<redacted>"
 
 
 # Preferred editor for local and remote sessions
@@ -31,18 +31,12 @@ alias edit="nocorrect sudo nano"
 # PATH
 #######
 
-# Gitkraken
-export PATH=$PATH:/opt/gitkraken
 # Composer
 export PATH=$PATH:vendor/bin
 # HTTP Prompt
 export PATH=$PATH:/home/fulvio/.local/bin
 # Snap
 export PATH=$PATH:/var/lib/snapd/snap/bin 
-# Go
-export PATH=$PATH:/usr/local/go/bin
-export GOPATH=/projects/go
-export PATH=$PATH:$(go env GOPATH)/bin
 
 
 ############
@@ -174,8 +168,8 @@ export DROPBOX_PATH=~/Dropbox/
 ###########################
 
 export GITHUB_USERNAME=unfulvio
-export GITHUB_API_KEY=<XXXXXXXXXXXXXX>
-export GITHUB_TOKEN=<XXXXXXXXXXXXXX>
+export GITHUB_API_KEY=<redacted>
+export GITHUB_TOKEN=<redacted>
 
 # Sync a Git Fork with Upstream
 # https://help.github.com/articles/configuring-a-remote-for-a-fork/
@@ -212,6 +206,16 @@ gitprune() {
   git branch --merged | grep -v "\*" | xargs -n 1 git branch -d
 }
 
+# Pulls changes from upstream for the current branch
+gitpull() {
+  git pull origin `git branch --show-current`
+}
+
+# Pushes the current branch changes to upstream
+gitpush() {
+  git push origin `git branch --show-current`
+}
+
 # Stash with message
 gitstash() {
  git stash save $1
@@ -228,7 +232,7 @@ gitcompose() {
     git checkout $1
     git pull origin $1
   else
-    git pull origin $(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
+    gitpull
   fi
   composer update
 }
@@ -255,18 +259,18 @@ gitgedit() {
   git config --global core.editor "gedit -s"
 }
 
+
 ##############
 # Development
 ##############
 
 export WT_REPOS_PATH=/projects/wp/woothemes/
-export WC_CONSUMER_KEY=<XXXXXXXXXXXXXX>
-export WC_CONSUMER_SECRET=<XXXXXXXXXXXXXX>
+export WC_CONSUMER_KEY=ck_<redacted>
+export WC_CONSUMER_SECRET=cs_<redacted>
 
-export CLUBHOUSE_API_TOKEN=<XXXXXXXXXXXXXX>
+export CLUBHOUSE_API_TOKEN=<redacted>
 export GLOTPRESS_USER=fulvio
-export GLOTPRESS_PASSWORD=<XXXXXXXXXXXXXX>
-
+export GLOTPRESS_PASSWORD=<redacted>
 
 VAGRANT_DISABLE_STRICT_DEPENDENCY_ENFORCEMENT=1
 
@@ -362,12 +366,3 @@ else
   alias uninstall="nocorrect sudo apt-get remove"
 
 fi
-
-# Packages and tools to install on clean machine
-setup() {
-  update
-  # https://httpie.org/
-  install httpie
-  # http://http-prompt.com/
-  pip install --user http-prompt 
-}
