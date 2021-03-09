@@ -1,3 +1,9 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
 
 ######
 # OS
@@ -13,16 +19,18 @@ export ARCHFLAGS="-arch x86_64"
 export SSH_KEY_PATH="~/.ssh/fulvio-notarstefano-id-rsa"
 
 # GPG
-export GPG_TTY="<redacted>"
-
+export GPG_TTY="XXXXXXXXXXXXXXXX"
 
 # Preferred editor for local and remote sessions
-if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='nano'
+if [[ -d "/etc/os-release" ]]; then
+  export EDITOR='mate -w'
 else
-  export EDITOR='nano'
+  if [[ -n $SSH_CONNECTION ]]; then
+    export EDITOR='nano'
+  else
+    export EDITOR='gedit'
+  fi
 fi
-
 # SU CLI Editor
 alias edit="nocorrect sudo nano"
 
@@ -33,10 +41,6 @@ alias edit="nocorrect sudo nano"
 
 # Composer
 export PATH=$PATH:vendor/bin
-# HTTP Prompt
-export PATH=$PATH:/home/fulvio/.local/bin
-# Snap
-export PATH=$PATH:/var/lib/snapd/snap/bin 
 
 
 ############
@@ -47,7 +51,7 @@ export PATH=$PATH:/var/lib/snapd/snap/bin
 DEFAULT_USER=fulvio
 
 # Theme mods
-ZSH_THEME="agnoster"
+ZSH_THEME="powerlevel10k/powerlevel10k"
 ENABLE_CORRECTION="true"
 COMPLETION_WAITING_DOTS="true"
 
@@ -60,7 +64,15 @@ source $ZSH/oh-my-zsh.sh
 plugins=( catimg composer copydir copyfile dirhistory git git-extras grunt gulp httpie npm sudo svn vagrant zsh-autosuggestions zsh-syntax-highlighting codeception )
 
 # Update OhMyZsh
-alias updatezsh="upgrade_oh_my_zsh"
+alias zshup="upgrade_oh_my_zsh"
+
+# Powerlevel10k theme
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+
+##################
+# Shell functions
+##################
 
 # Please
 alias please='sudo $(fc -ln -1)'
@@ -72,7 +84,7 @@ localip() {
 
 # Get my external IP address (uses OpenDNS as resolver)
 extip() {
-  dig +short myip.opendns.com @resolver1.opendns.com
+  dig @ns1.google.com TXT o-o.myaddr.l.google.com +short
 }
 
 # Echoes both local and external IP addresses
@@ -83,73 +95,14 @@ myip() {
   echo "External IP address: ${EXTERNALIP}"
 }
 
-# Creates a Gnome app shortcut
-appshortcut() {
-  if [ $# -eq 0 ]; then
-    return
-  else
-    cat "~/.local/share/applications/$1.desktop" << EOF
-[Desktop Entry]
-Type=Application
-Encoding=UTF-8
-Name=Application Name
-Comment=Application description
-Icon=/path/to/icon.svg
-Exec=application or "script.sh" %f
-Terminal=false
-StartupWMClass=helps-with-sticky
-Name[en_GB]=Application.desktop
-EOF
-    gedit "~/.local/share/applications/$1.desktop"
-  fi
-}
-
 # open Gnome Files for the current path
 files() {
   nocorrect xdg-open .
 }
 
-# fix for VMWare Workstation breaks (must update the VM version)
-fixwmware() {
-  VMWARE_VERSION=workstation-15.5.1
-  TMP_FOLDER=/tmp/patch-vmware
-
-  rm -fdr $TMP_FOLDER
-  mkdir -p $TMP_FOLDER
-  cd $TMP_FOLDER
-
-  git clone https://github.com/mkubecek/vmware-host-modules.git
-
-  cd $TMP_FOLDER/vmware-host-modules
-
-  git checkout $VMWARE_VERSION
-  git fetch
-
-  make
-  sudo make install
-  sudo rm /usr/lib/vmware/lib/libz.so.1/libz.so.1
-  sudo ln -s /lib/x86_64-linux-gnu/libz.so.1
-
-  /usr/lib/vmware/lib/libz.so.1/libz.so.1
-
-  sudo /etc/init.d/vmware restart
-}
-
-# Windows Remote Desktop
-windows() {
-  if [ $# -eq 0 ]; then
-    echo 'Using default address... '
-    WINIP="192.168.2.14"
-  else
-    WINIP=$1  
-  fi
-  echo "Connecting to $WINIP..."
-  rdesktop -g 1920x1080 -r disk:moshimoshi=/home/fulvio/Desktop/Shared -u fulvio.notarstefano@gmail.com $WINIP
-}
-
 # Mount Synology shared folders
 synology() {
-  for dir_name in backup books comics downloads dropbox music photo projects software surveillance video; do
+  for dir_name in backup books comics downloads dropbox music papà photo projects software surveillance video; do
     sudo mount -t nfs 192.168.2.23:/volume1/$dir_name /synology/$dir_name
     cd /synology
   done
@@ -163,13 +116,17 @@ synology() {
 export DROPBOX_PATH=~/Dropbox/
 
 
-###########################
-# Git / GitHub / ClubHouse
-###########################
+#####################
+# Git / GitHub / SVN 
+#####################
 
+# Personal: 
 export GITHUB_USERNAME=unfulvio
-export GITHUB_API_KEY=<redacted>
-export GITHUB_TOKEN=<redacted>
+export GITHUB_TOKEN=XXXXXXXXXX
+# GoDaddy:
+export GITHUB_API_KEY=XXXXXXXX
+# SkyVerge SVN:
+export WP_SVN_USER="skyverge"
 
 # Sync a Git Fork with Upstream
 # https://help.github.com/articles/configuring-a-remote-for-a-fork/
@@ -194,7 +151,9 @@ gitclone() {
 
 # Update a repository
 gitupdate() {
-  git checkout master
+  # checkout to default branch (ie. master or main)
+  BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+  git checkout $BRANCH
   git pull
   git fetch --prune
 }
@@ -221,23 +180,17 @@ gitstash() {
  git stash save $1
 }
 
+# Unstashes last stashed changes
+gitunstash() {
+ git stash pop
+}
+
 # Undo the last commit
 gitundo() {
   git reset HEAD~
 }
 
-# Run a composer update when switching branches or pulling the latest changes
-gitcompose() {
-  if [[ $# -eq 0 ]]; then
-    git checkout $1
-    git pull origin $1
-  else
-    gitpull
-  fi
-  composer update
-}
-
-# Rename a brach 
+# Rename a brach and push changesremotely
 # usage: gitrename <oldname> <newname>
 gitrename() {
   git branch -m $2
@@ -254,9 +207,13 @@ gitdeletetag() {
 }
 alias gitrmtag="nocorrect gitdeletetag"
 
-# Configures gedit as the default git editor
-gitgedit() {
-  git config --global core.editor "gedit -s"
+# Configure default editor as the git commit editor
+gitgeditor() {
+  if [[ -d "/etc/os-release" ]]; then
+    git config --global core.editor "mate -w"
+  else
+    git config --global core.editor "gedit -s"
+  fi
 }
 
 
@@ -264,13 +221,15 @@ gitgedit() {
 # Development
 ##############
 
-export WT_REPOS_PATH=/projects/wp/woothemes/
-export WC_CONSUMER_KEY=ck_<redacted>
-export WC_CONSUMER_SECRET=cs_<redacted>
+export PROJECTS_PATH=~/Projects
 
-export CLUBHOUSE_API_TOKEN=<redacted>
-export GLOTPRESS_USER=fulvio
-export GLOTPRESS_PASSWORD=<redacted>
+export WT_REPOS_PATH=/projects/wp/woothemes/
+export WC_CONSUMER_KEY=XXXXX
+export WC_CONSUMER_SECRET=XXXXX
+
+export SAKE_PRE_RELEASE_PATH=~/Projects/prereleases/
+
+export CLUBHOUSE_API_TOKEN=XXXXX
 
 VAGRANT_DISABLE_STRICT_DEPENDENCY_ENFORCEMENT=1
 
@@ -341,7 +300,12 @@ subscriptions() {
 # Package Management
 #####################
 
-DISTRO=$(gawk -F= '/^NAME/{print $2}' /etc/os-release)
+# Darwin
+if [[ -d "/etc/os-release" ]]; then
+  DISTRO=Darwin
+else 
+  DISTRO=$(gawk -F= '/^NAME/{print $2}' /etc/os-release)
+fi
 
 # Fedora
 if [[ "$DISTRO" == "Fedora" ]]; then
