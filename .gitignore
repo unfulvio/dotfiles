@@ -1,0 +1,2 @@
+# place global .gitignore in ~/, add to global .gitconfig
+.idea
