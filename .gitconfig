@@ -1,0 +1,10 @@
+[user]
+  name = Fulvio Notarstefano
+  # update this
+  email = <update email here>
+  username = unfulvio
+[core]
+  # update depending on OS
+  editor = mate
+  # may need to update this to abs path depending on OS
+  excludesfile=~/.gitignore
