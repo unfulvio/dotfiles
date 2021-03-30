@@ -190,6 +190,14 @@ gitundo() {
   git reset HEAD~
 }
 
+# Cleans the local branch and aligns with remote
+gitclean() {
+  PRIMARY="origin/$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')"
+  git fetch origin
+  git reset --hard $PRIMARY
+  git clean -f -d
+}
+
 # Rename a brach and push changesremotely
 # usage: gitrename <oldname> <newname>
 gitrename() {
